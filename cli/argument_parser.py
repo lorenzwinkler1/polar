@@ -293,6 +293,13 @@ class ArgumentParser:
             nargs="*",
             help="Synthesize a solvable loop from an unsolvable loop",
         )
+        self.argument_parser.add_argument(
+            "--termination",
+            action="store_true",
+            default=False,
+            help="""If set, Polar tries to compute the number of iterations for the loop to finish. 
+                    Only simple loops with noncyclic, polynomial assignments and a polynomial loop guard are supported.""",
+        )
 
     def parse_args(self):
         args = self.argument_parser.parse_args()

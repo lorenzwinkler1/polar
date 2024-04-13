@@ -25,7 +25,7 @@ class ActionFactory:
             return SimulationAction(cli_args)
         if cli_args.sensitivity_analysis or cli_args.sensitivity_analysis_diff:
             return SensitivityAction(cli_args)
-        if cli_args.goals or cli_args.invariants:
+        if cli_args.goals or cli_args.invariants or cli_args.termination:
             return GoalsAction(cli_args)
         if cli_args.plot:
             return PlotAction(cli_args)

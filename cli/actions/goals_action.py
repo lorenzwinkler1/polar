@@ -2,6 +2,8 @@ from argparse import Namespace
 from typing import Dict
 from symengine.lib.symengine_wrapper import Expr
 from program import Program
+from program.condition.atom_cond import Atom
+from program.condition.true_cond import TrueCond
 from .action import Action
 from inputparser import (
     GoalParser,
@@ -41,6 +43,7 @@ class GoalsAction(Action):
     solvers: Dict[Expr, RecurrenceSolver]
     rec_builder: RecBuilder
     program: Program
+    termination_condition: Atom
 
     def __init__(self, cli_args: Namespace):
         self.cli_args = cli_args
@@ -48,6 +51,14 @@ class GoalsAction(Action):
     def __call__(self, *args, **kwargs):
         benchmark = args[0]
         program = parse_program(benchmark)
+        if self.cli_args.termination:
+            self.termination_condition: Atom = program.loop_guard
+            if program.is_probabilistic:
+                raise NotImplementedError("Only deterministic programs are supported by termination analysis")
+            if self.termination_condition.cop not in {'>', '<'}:
+                raise NotImplementedError("Only > and < are supported in loop guard when analyzing for termination")
+            # remove the loop condition from the program to allow for normalization
+            program.loop_guard = TrueCond()
         program = normalize_program(program)
         rec_builder = RecBuilder(program)
         self.initialize_program(program, rec_builder)
@@ -61,6 +72,10 @@ class GoalsAction(Action):
     def parse_goals(self):
         if self.cli_args.invariants and not self.cli_args.goals:
             self.cli_args.goals = [f"E({v})" for v in self.program.original_variables]
+        
+        if self.cli_args.termination:
+            # We need the closed forms of the expressions in the loop guard
+            self.cli_args.goals = [f"{symbol}" for symbol in self.termination_condition.get_free_symbols()]
 
         goals = []
         for goal in self.cli_args.goals:
@@ -109,6 +124,9 @@ class GoalsAction(Action):
 
         if self.cli_args.invariants:
             self.handle_invariants(closed_forms)
+
+        if self.cli_args.termination:
+            self.handle_termination(closed_forms)
 
     def handle_moment_goal(self, goal_data):
         monom = goal_data[0]
@@ -306,3 +324,10 @@ class GoalsAction(Action):
         for b in basis:
             print(f"{b} = 0")
             print()
+
+    def handle_termination(self, closed_forms):
+        print()
+        print(colored("-------------------", "cyan"))
+        print(colored("-   Termination   -", "cyan"))
+        print(colored("-------------------", "cyan"))
+        print()
