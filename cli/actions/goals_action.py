@@ -15,7 +15,7 @@ from inputparser import (
 )
 from recurrences import RecBuilder
 from recurrences.solver import RecurrenceSolver
-from sympy import N, Symbol
+from sympy import N, Poly, Symbol, simplify, solve
 from utils import (
     indent_string,
     raw_moments_to_cumulants,
@@ -331,3 +331,18 @@ class GoalsAction(Action):
         print(colored("-   Termination   -", "cyan"))
         print(colored("-------------------", "cyan"))
         print()
+
+        # normalze the termination condition
+        cond: Poly
+        if self.termination_condition.cop == ">":
+            cond = self.termination_condition.poly1-self.termination_condition.poly2
+        elif self.termination_condition.cop == "<":
+            cond = self.termination_condition.poly2-self.termination_condition.poly1
+
+        cond:Poly = simplify(cond)
+        
+        new_cond = unpack_piecewise(cond.subs(closed_forms))
+        print(f"Termination condition with closed forms: {new_cond}")
+
+        zeros = solve(new_cond, Symbol("n", integer=True))
+        print(f"Zeros: {zeros}")
