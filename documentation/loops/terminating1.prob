@@ -1,0 +1,6 @@
+x = 0
+y = z
+while y>0:
+    x = x + 1
+    y = y + z - x
+end
