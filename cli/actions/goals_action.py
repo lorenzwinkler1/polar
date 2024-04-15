@@ -2,8 +2,9 @@ from argparse import Namespace
 from typing import Dict
 from symengine.lib.symengine_wrapper import Expr
 from program import Program
-from program.condition.atom_cond import Atom
+from program.condition.condition import Condition
 from program.condition.true_cond import TrueCond
+from termination.termination_condition import TerminationCondition
 from .action import Action
 from inputparser import (
     GoalParser,
@@ -43,7 +44,7 @@ class GoalsAction(Action):
     solvers: Dict[Expr, RecurrenceSolver]
     rec_builder: RecBuilder
     program: Program
-    termination_condition: Atom
+    termination_condition: Condition
 
     def __init__(self, cli_args: Namespace):
         self.cli_args = cli_args
@@ -333,16 +334,15 @@ class GoalsAction(Action):
         print()
 
         # normalze the termination condition
-        cond: Poly
-        if self.termination_condition.cop == ">":
-            cond = self.termination_condition.poly1-self.termination_condition.poly2
-        elif self.termination_condition.cop == "<":
-            cond = self.termination_condition.poly2-self.termination_condition.poly1
+        termination_condition = TerminationCondition(self.termination_condition, closed_forms)
 
-        cond:Poly = simplify(cond)
-        
-        new_cond = unpack_piecewise(cond.subs(closed_forms))
-        print(f"Termination condition with closed forms: {new_cond}")
+        witness = termination_condition.get_witness()
 
-        zeros = solve(new_cond, Symbol("n", integer=True))
-        print(f"Zeros: {zeros}")
+        if witness is None:
+            print("Program termination could not be determined")
+            return
+        if witness.is_termination_witness():
+            print(colored("Program terminates. Witness found:", "green"))
+        else:
+            print(colored("Program does not terminate. Witness found:", "green"))
+        print(witness)

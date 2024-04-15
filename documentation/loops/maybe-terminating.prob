@@ -1,0 +1,14 @@
+# This function terminates based on the input parameter "i":
+# This corresponds to 0.01 x^(3)-0.294 x^(2)+1.52 x+f0
+# This function terminates iff f0 <  9.996
+
+i = 4/50
+h = -81/125
+g = 3*304/500
+f = f0
+
+while f > 0:
+  h = h + i
+  g = g + h
+  f = f + g
+end
