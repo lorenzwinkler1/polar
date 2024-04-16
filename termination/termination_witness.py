@@ -5,14 +5,10 @@ from sympy import Poly
 from sympy.core.relational import Relational
 
 
-class TerminationConditionWitness(ABC):
+class TerminationWitness(ABC):
     @abstractmethod
-    def is_truth_witness(self):
+    def is_termination_witness(self):
         pass
 
-    def is_false_witness(self) -> bool:
+    def is_nontermination_witness(self):
         return not self.is_termination_witness()
-
-    @abstractmethod
-    def get_interval(self) -> List[Relational | bool]:
-        pass

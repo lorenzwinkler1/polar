@@ -1,0 +1,11 @@
+
+
+f=b*81/4-0.25
+g = -10
+h = 100
+
+while true:
+    g = g+2
+    f = f+g
+    h = h+1-b
+end
