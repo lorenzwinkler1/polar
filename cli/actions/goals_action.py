@@ -72,7 +72,7 @@ class GoalsAction(Action):
         if self.cli_args.invariants and not self.cli_args.goals:
             self.cli_args.goals = [f"E({v})" for v in self.program.original_variables]
         
-        if self.cli_args.termination:
+        if self.cli_args.termination and not self.cli_args.goals:
             # We need the closed forms of the expressions in the loop guard
             self.cli_args.goals = [f"{symbol}" for symbol in self.termination_condition.get_free_symbols()]
 
