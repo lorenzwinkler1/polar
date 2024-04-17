@@ -1,11 +1,12 @@
 from typing import List, Tuple, cast
 import numpy as np
-from sympy import Poly, Symbol, simplify
+from sympy import Poly, Symbol, limit, real_roots, simplify, solve
 from program.condition.and_cond import And
 from program.condition.atom_cond import Atom
 from program.condition.condition import Condition
 from program.condition.false_cond import FalseCond
 from program.condition.true_cond import TrueCond
+from termination.asymptotic_termination_witness import AsymptoticTerminationWitness
 from termination.exact_termination_witness import ExactWitness
 from termination.termination_witness import TerminationWitness
 from utils.expressions import unpack_piecewise
@@ -44,6 +45,23 @@ class TerminationCondition:
     
     def _get_asymptotic_witness(self, poly: Poly, condition: Condition, terminates_on_zero: bool, terminates_negative: bool):
         leading_coeff = poly.coeffs()[0]
+        print(type(leading_coeff))
+        print(f"Leading coefficient: {leading_coeff}")
+
+        if not terminates_negative:
+            # exact termination conditions can not be checked asymptotically
+            return None
+
+        # TODO: this currently is very naive, and can, at least for coefficients
+        # that consist of low-degree polynomials over constants, be improved
+
+        if leading_coeff.is_negative:
+            return AsymptoticTerminationWitness(condition, poly)
+        
+        # if leading_coeff is positive, we still don't know for sure if the 
+        # condition is false for some ("smaller") n
+
+        return None
         
         
     def _get_exact_witness(self, poly: Poly, condition: Condition, terminates_on_zero: bool, terminates_negative: bool):
@@ -60,7 +78,6 @@ class TerminationCondition:
             if n<0:
                 continue
             value = poly.eval(n)
-            print(f"f({n})={value}")
             if value < 0 and terminates_negative:
                 first_n = n
                 break

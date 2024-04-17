@@ -17,5 +17,5 @@ class ExactWitness(TerminationWitness):
     def __str__(self) -> str:
         if self.is_termination_witness():
             return f"The condition {self.condition} was found to be false for the loop iteration {self.first_false_integer}.\nIt's zeros are: {self.zeros}"
-    
-    
+        else:
+            return f"The condition {self.condition} was found to not be false for and positive (inkl. 0) integer."    

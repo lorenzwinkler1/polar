@@ -56,9 +56,7 @@ class GoalsAction(Action):
             self.termination_condition: Atom = program.loop_guard
             if program.is_probabilistic:
                 raise NotImplementedError("Only deterministic programs are supported by termination analysis")
-            if self.termination_condition.cop not in {'>', '<'}:
-                raise NotImplementedError("Only > and < are supported in loop guard when analyzing for termination")
-            # remove the loop condition from the program to allow for normalization
+             # remove the loop condition from the program to allow for normalization
             program.loop_guard = TrueCond()
         program = normalize_program(program)
         rec_builder = RecBuilder(program)
