@@ -32,21 +32,27 @@ class TerminationCondition:
         condition = cast(Atom, condition)
 
         poly, terminates_on_zero, terminates_negative = self._normalize_atom(condition)
-        n = Symbol('n', integer=True)
+        n = Symbol('n')
         closed_forms = {k: unpack_piecewise(self.closed_forms[k]) for k in self.closed_forms}
-        poly=Poly(poly.subs(closed_forms))
+        poly=Poly(poly.subs(closed_forms), n)
         print(f"Normalized polynomial of loop guard {poly}")
 
-        if len(poly.free_symbols) > 1:
-            return None
+        if len(poly.free_symbols) == 1:
+            return self._get_exact_witness(poly, condition, terminates_on_zero, terminates_negative)
+        
+        return self._get_asymptotic_witness(poly, condition, terminates_on_zero, terminates_negative)
+    
+    def _get_asymptotic_witness(self, poly: Poly, condition: Condition, terminates_on_zero: bool, terminates_negative: bool):
+        leading_coeff = poly.coeffs()[0]
         
         
+    def _get_exact_witness(self, poly: Poly, condition: Condition, terminates_on_zero: bool, terminates_negative: bool):
         # extract coefficients
         coeffs = [float(coeff) for coeff in poly.all_coeffs()]
         zeros = cast(np.ndarray, np_poly.polyroots(list(reversed(coeffs))))
         print(f"Found zeros: {zeros}")
 
-        ns_to_check = [int(zero) for zero in zeros] + [int(zero)+1 for zero in zeros]
+        ns_to_check = [0]+[int(zero) for zero in zeros] + [int(zero)+1 for zero in zeros]
         ns_to_check.sort()
 
         first_n = None

@@ -1,6 +1,6 @@
 x = 0
 y = z
-while y>y-y-100:
+while y>0:
     x = x + 1
-    y = y + z - x
+    y = y + z*z - x
 end
