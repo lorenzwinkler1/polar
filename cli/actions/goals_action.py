@@ -2,9 +2,6 @@ from argparse import Namespace
 from typing import Dict
 from symengine.lib.symengine_wrapper import Expr
 from program import Program
-from program.condition.condition import Condition
-from program.condition.true_cond import TrueCond
-from termination.termination_condition import TerminationCondition
 from .action import Action
 from inputparser import (
     GoalParser,
@@ -16,7 +13,7 @@ from inputparser import (
 )
 from recurrences import RecBuilder
 from recurrences.solver import RecurrenceSolver
-from sympy import N, Poly, Symbol, simplify, solve
+from sympy import N, Symbol
 from utils import (
     indent_string,
     raw_moments_to_cumulants,
@@ -44,7 +41,6 @@ class GoalsAction(Action):
     solvers: Dict[Expr, RecurrenceSolver]
     rec_builder: RecBuilder
     program: Program
-    termination_condition: Condition
 
     def __init__(self, cli_args: Namespace):
         self.cli_args = cli_args
@@ -52,12 +48,6 @@ class GoalsAction(Action):
     def __call__(self, *args, **kwargs):
         benchmark = args[0]
         program = parse_program(benchmark)
-        if self.cli_args.termination:
-            self.termination_condition: Atom = program.loop_guard
-            if program.is_probabilistic:
-                raise NotImplementedError("Only deterministic programs are supported by termination analysis")
-             # remove the loop condition from the program to allow for normalization
-            program.loop_guard = TrueCond()
         program = normalize_program(program)
         rec_builder = RecBuilder(program)
         self.initialize_program(program, rec_builder)
@@ -71,10 +61,6 @@ class GoalsAction(Action):
     def parse_goals(self):
         if self.cli_args.invariants and not self.cli_args.goals:
             self.cli_args.goals = [f"E({v})" for v in self.program.original_variables]
-        
-        if self.cli_args.termination and not self.cli_args.goals:
-            # We need the closed forms of the expressions in the loop guard
-            self.cli_args.goals = [f"{symbol}" for symbol in self.termination_condition.get_free_symbols()]
 
         goals = []
         for goal in self.cli_args.goals:
@@ -123,9 +109,6 @@ class GoalsAction(Action):
 
         if self.cli_args.invariants:
             self.handle_invariants(closed_forms)
-
-        if self.cli_args.termination:
-            self.handle_termination(closed_forms)
 
     def handle_moment_goal(self, goal_data):
         monom = goal_data[0]
@@ -323,24 +306,3 @@ class GoalsAction(Action):
         for b in basis:
             print(f"{b} = 0")
             print()
-
-    def handle_termination(self, closed_forms):
-        print()
-        print(colored("-------------------", "cyan"))
-        print(colored("-   Termination   -", "cyan"))
-        print(colored("-------------------", "cyan"))
-        print()
-
-        # normalze the termination condition
-        termination_condition = TerminationCondition(self.termination_condition, closed_forms)
-
-        witness = termination_condition.get_witness()
-
-        if witness is None:
-            print("Program termination could not be determined")
-            return
-        if witness.is_termination_witness():
-            print(colored("Program terminates. Witness found:", "green"))
-        else:
-            print(colored("Program does not terminate. Witness found:", "green"))
-        print(witness)

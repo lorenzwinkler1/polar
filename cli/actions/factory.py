@@ -1,5 +1,7 @@
 from argparse import Namespace
 
+from cli.actions.termination_action import TerminationAction
+
 from .bayesian_network_action import BayesNetworkAction
 from .sensitivity_action import SensitivityAction
 from .simulation_action import Action, SimulationAction
@@ -25,7 +27,7 @@ class ActionFactory:
             return SimulationAction(cli_args)
         if cli_args.sensitivity_analysis or cli_args.sensitivity_analysis_diff:
             return SensitivityAction(cli_args)
-        if cli_args.goals or cli_args.invariants or cli_args.termination:
+        if cli_args.goals or cli_args.invariants:
             return GoalsAction(cli_args)
         if cli_args.plot:
             return PlotAction(cli_args)
@@ -37,4 +39,6 @@ class ActionFactory:
             return SynthUnsolvInvAction(cli_args)
         if cli_args.synth_solv_loop is not None:
             return SynthSolvLoopAction(cli_args)
+        if cli_args.termination:
+            return TerminationAction(cli_args)
         return PrintBenchmarkAction(cli_args)
