@@ -1,5 +1,4 @@
 # Validated with example 5.2 form paper https://doi.org/10.1007/s10703-023-00440-z
-# file just temporary to have it in source control
 
 from sympy import Eq, Mul, Poly, Pow, sympify, Symbol, smtlib_code
 
@@ -20,25 +19,13 @@ def get_monom_tuples(num_vars, max_degree):
     
     return options
         
-def pow_to_mul(expr):
-    """
-    Convert integer powers in an expression to Muls, like a**2 => a*a.
-    """
-    pows = list(expr.atoms(Pow))
-    if any(not e.is_Integer for b, e in (i.as_base_exp() for i in pows)):
-
-        raise ValueError("A power contains a non-integer exponent")
-    repl = zip(pows, (Mul(*[b]*e,evaluate=False) for b,e in (i.as_base_exp() for i in pows)))
-    return expr.subs(repl)
-
 monomial_tuples = get_monom_tuples(NUM_VARS, MAX_DEGREE)
 vars = [Symbol(f'x_{i}', real=True) for i in range(NUM_VARS)]
 def get_monomial(vars, coeffs):
     monom = sympify(1)
     for i in range(len(coeffs)):
-        monom= monom*pow_to_mul(vars[i]**coeffs[i])
-    print(pow_to_mul(monom))
-    return pow_to_mul(monom)
+        monom= monom*vars[i]**coeffs[i]
+    return monom
 
 monomials = [get_monomial(vars, coeff) for coeff in monomial_tuples]
 
@@ -73,12 +60,51 @@ for i,var in enumerate(vars):
 
     for k in range(len(coeffs)):
         should_be_one = monoms[k][i] == 1 and sum(monoms[k])==1
-        exprs.append(pow_to_mul(Eq(coeffs[k], Symbol(f"p_r_{i}_{'_'.join(map(str, monoms[k]))}", real = True))))
+        exprs.append(Eq(coeffs[k], Symbol(f"p_r_{i}_{'_'.join(map(str, monoms[k]))}", real = True)))
         exprs.append(Eq(Symbol(f"p_r_{i}_{'_'.join(map(str, monoms[k]))}", real = True), int(should_be_one)))
 
-    
 
-print(smtlib_code(exprs))
+# p_{l,i}
+inverse_dict = {}
+for i,var in enumerate(vars):
+    eq = sympify(0)
+    for j, monom in enumerate(monomials):
+        monomial_tuple = monomial_tuples[j]
+        eq += monom*Symbol(f"a_{i}__{'_'.join(map(str, monomial_tuple))}")
 
-def generate_p_r_i(monomials, ):
-    pass
+    tmp_symbol = Symbol(str(var)+"_TMP", real=True)
+    inverse_dict[tmp_symbol] = eq
+
+
+for i, var in enumerate(vars):
+    print("=================")
+    eq = n(var)
+    # print(eq)
+    # substitute in inverse dict
+    eq = eq.subs({var: Symbol(str(var)+"_TMP", real=True) for var in vars})
+
+    eq = eq.subs(inverse_dict)
+    # print(inverse_dict)
+    # print()
+    # print(eq)
+    poly = Poly(eq, *vars)
+    coeffs = poly.coeffs()
+    monoms = poly.monoms()
+
+    for k in range(len(coeffs)):
+        should_be_one = monoms[k][i] == 1 and sum(monoms[k])==1
+        exprs.append(Eq(coeffs[k], Symbol(f"p_l_{i}_{'_'.join(map(str, monoms[k]))}", real = True)))
+        exprs.append(Eq(Symbol(f"p_l_{i}_{'_'.join(map(str, monoms[k]))}", real = True), int(should_be_one)))
+
+
+
+smt_str = smtlib_code(exprs)
+smt_str = str(smt_str)
+smt_str = smt_str.replace("(=", "(! (=")
+
+i=0
+while smt_str.find("))\n")>0:
+    smt_str = smt_str.replace(f"))\n", f") :named a{i}) )\n" ,1)
+    i+=1
+
+print(smt_str)
