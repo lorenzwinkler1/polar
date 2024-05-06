@@ -300,6 +300,13 @@ class ArgumentParser:
             help="""If set, Polar tries to compute the number of iterations for the loop to finish. 
                     Only simple loops with noncyclic, polynomial assignments and a polynomial loop guard are supported.""",
         )
+        self.argument_parser.add_argument(
+            "--termination_smt",
+            action="store_true",
+            default=False,
+            help="""If set, Polar tries to compute a logical formula in SMT-lib syntax, which's validity/satisfyability
+                    implies (non-)termination.""",
+        )
 
     def parse_args(self):
         args = self.argument_parser.parse_args()

@@ -41,4 +41,6 @@ class ActionFactory:
             return SynthSolvLoopAction(cli_args)
         if cli_args.termination:
             return TerminationAction(cli_args)
+        if cli_args.termination_smt:
+            return TerminationAction(cli_args, smt=True)
         return PrintBenchmarkAction(cli_args)

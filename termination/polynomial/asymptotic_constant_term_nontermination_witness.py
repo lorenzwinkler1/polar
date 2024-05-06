@@ -1,6 +1,6 @@
 from sympy import Poly, Symbol
 from program.condition.condition import Condition
-from termination.termination_witness import TerminationWitness
+from termination.polynomial.termination_witness import TerminationWitness
 
 
 class AsymptoticConstantTermNonTerminationWitness(TerminationWitness):
@@ -13,4 +13,5 @@ class AsymptoticConstantTermNonTerminationWitness(TerminationWitness):
 
     def __str__(self) -> str:
         return f"""The polynomial {self.polynomial} is eventually nonterminating,
-        and the constant term can grow to infinity, because of the symbol {self.symbol}, without affecting the other coefficients"""
+        and the constant term can grow to infinity, because of the symbol {self.symbol},
+        without affecting the other coefficients"""

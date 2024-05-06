@@ -6,10 +6,10 @@ from program.condition.atom_cond import Atom
 from program.condition.condition import Condition
 from program.condition.false_cond import FalseCond
 from program.condition.true_cond import TrueCond
-from termination.asymptotic_constant_term_nontermination_witness import AsymptoticConstantTermNonTerminationWitness
-from termination.asymptotic_termination_witness import AsymptoticTerminationWitness
-from termination.exact_termination_witness import ExactWitness
-from termination.termination_witness import TerminationWitness
+from termination.polynomial.asymptotic_constant_term_nontermination_witness import AsymptoticConstantTermNonTerminationWitness
+from termination.polynomial.asymptotic_termination_witness import AsymptoticTerminationWitness
+from termination.polynomial.exact_termination_witness import ExactWitness
+from termination.polynomial.termination_witness import TerminationWitness
 from termination.util.poly_utils import get_sign, has_real_zero, has_real_zero_for_any
 from utils.expressions import unpack_piecewise
 import numpy.polynomial.polynomial as np_poly

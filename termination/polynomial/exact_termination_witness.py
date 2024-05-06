@@ -2,7 +2,7 @@ from typing import List, Optional
 from sympy import Poly
 from sympy.core.relational import Relational
 from program.condition.condition import Condition
-from termination.termination_witness import TerminationWitness
+from termination.polynomial.termination_witness import TerminationWitness
 
 
 class ExactWitness(TerminationWitness):

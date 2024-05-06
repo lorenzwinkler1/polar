@@ -1,6 +1,6 @@
 from sympy import Poly
 from program.condition.condition import Condition
-from termination.termination_witness import TerminationWitness
+from termination.polynomial.termination_witness import TerminationWitness
 
 
 class AsymptoticTerminationWitness(TerminationWitness):
