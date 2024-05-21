@@ -1,0 +1,9 @@
+y = 0
+x = z
+while true:
+    x0 = x
+    s = Normal(0.1,1)
+    s1 = Normal(-0.2,2)
+    y = y + s*2 + s1
+    x = x + z*z - y
+end

@@ -1,0 +1,6 @@
+
+while true:
+    y = x
+    t = Normal(1,1)
+    x =  x + t**2
+end
