@@ -1,9 +1,7 @@
+x = 1
 y = 0
-x = z
 while true:
-    x0 = x
-    s = Normal(0.1,1)
-    s1 = Normal(-0.2,2)
-    y = y + s*2 + s1
-    x = x + z*z - y
+    s = Normal(1,1)
+    y = y+s*s
+    x = 2*x+y*y {1/2} 1/2*x
 end

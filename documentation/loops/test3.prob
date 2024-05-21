@@ -1,8 +1,8 @@
-d = 1
-x = a
+x = 1
+y = 0
 while true:
-    s = Normal(1, 1)
-    d = d + s
-    d = d * 2
-    x = x - d
+    x = y-z
+    s = Normal(1,1)
+    y = y+s*s
+    z = z+s*s
 end
