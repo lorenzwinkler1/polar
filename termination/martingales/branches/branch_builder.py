@@ -1,0 +1,187 @@
+from functools import lru_cache
+from math import prod
+from typing import Set, List
+from symengine.lib.symengine_wrapper import Expr, Symbol, sympify, One, Zero
+from program import Program
+from program.assignment import Assignment
+from program.assignment.dist_assignment import DistAssignment
+from program.assignment.poly_assignment import PolyAssignment
+from program.condition.true_cond import TrueCond
+from program.type import Finite
+from recurrences import Recurrences
+from recurrences.rec_builder_context import RecBuilderContext
+from utils import get_terms_with_var, get_terms_with_vars, get_monoms
+
+
+class BranchBuilder:
+    """
+    This class provides the functionality to construct all the possible recurrences of monomials.
+    """
+
+    program: Program
+    context: RecBuilderContext
+
+    def __init__(self, program: Program):
+        self.program = program
+
+    @lru_cache(maxsize=None)
+    def get_branches(self, monomial: Expr) -> Recurrences:
+        """
+        Constructs a complete system of linear recurrences (over expected values) completely describing
+        the expected value of "monomial".
+        """
+        monomial = sympify(monomial)
+        to_process = {monomial}
+        recurrence_dict = {}
+        while to_process:
+            next_monom = to_process.pop()
+            recurrence_dict[next_monom] = self.get_recurrence_branches(next_monom)
+
+            monoms = set()
+            for p, expr in recurrence_dict[next_monom]:
+                monoms = monoms.union(get_monoms(
+                    expr, constant_symbols=self.program.symbols
+                ))
+            for _, monom in monoms:
+                if monom not in recurrence_dict:
+                    to_process.add(monom)
+
+        return recurrence_dict
+
+    @lru_cache(maxsize=None)
+    def get_recurrence_branches(self, monomial: Expr):
+        """
+        Constructs a single recurrence (the moment recurrence) for a given monomial, by bottom up substitution,
+        and reducing the powers of finite-valued variables.
+        """
+        self.context = RecBuilderContext()
+        last_assign_index = self._get_last_assign_index(monomial.free_symbols)
+        branches = [(1, monomial)]
+        for i in reversed(range(last_assign_index + 1)):
+            assignment = self.program.loop_body[i]
+            new_branches = []
+            for probability, right_side in branches:
+                # Consider each branch
+                if self._assign_replace_is_necessary(assignment, right_side):
+                    right_side = right_side.expand()
+                    possible_right_sides = self._replace_assign_branches(right_side, assignment)
+                    new_branches = new_branches+[(p*probability, expr.expand()) for (p, expr) in possible_right_sides]
+                    #right_side = self._reduce_powers(right_side)
+                else:
+                    new_branches.append((probability, right_side))
+            branches = new_branches
+        return branches
+
+    def _assign_replace_is_necessary(self, assign: Assignment, poly: Expr):
+        """
+        Returns true iff assign needs to be considered when constructing a moment recurrence.
+        The argument "poly" is the intermediate result of constructing a moment recurrence.
+        """
+        if isinstance(assign, DistAssignment):
+            return False  # Dist assignments are kept as is, since they do not introduce a new branch. They are later handled when computing bounds
+        if assign.variable in poly.free_symbols:
+            return True
+        if assign.variable not in self.context.triggers:
+            return False
+        return bool(self.context.triggers[assign.variable] & poly.free_symbols)
+
+    def _get_last_assign_index(self, variables: Set[Symbol]):
+        """
+        Returns the maximum index of the assignments of all given variables.
+        """
+        max_index = -1
+        for v in variables:
+            if self.program.var_to_index[v] > max_index:
+                max_index = self.program.var_to_index[v]
+        return max_index
+
+    def _replace_assign_branches(self, poly: Expr, assign: Assignment):
+        """
+        This method computes the possible branches for an assignment
+        """
+        cond = assign.condition.to_arithm(self.program)
+        # if poly doesn't contain triggers of assign.variables, we only need to worry about assign.variable itself
+        if not self.context.var_has_triggers_in_expr(assign.variable, poly):
+            terms_with_var, rest_without_var = get_terms_with_var(poly, assign.variable)
+
+            if not isinstance(assign.condition, TrueCond):
+                raise NotImplementedError()  # This is nontrivial, as conditions do not always create a new branch
+            if isinstance(assign, PolyAssignment):
+                possible_branches = []
+                for i in range(len(assign.polynomials)):
+                    result = rest_without_var
+                    for var_power, rest in terms_with_var:
+                        result += assign.polynomials[i]**var_power*rest
+                    possible_branches.append((assign.probabilities[i],result))
+                return possible_branches
+
+            else:
+                raise NotImplementedError()
+        # if poly contains triggers of assign.variable, we need to consider all monomials contain assign.variable
+        # or any trigger variables.
+        else:
+            raise NotImplementedError()
+
+    def _reduce_powers(self, poly: Expr):
+        """
+        Reduces the power of finite-valued variables in a given expression.
+        """
+        terms_with_vars, rest_without_vars = get_terms_with_vars(
+            poly, self.program.finite_variables
+        )
+        finite_types: List[Finite] = [
+            self.program.get_type(v) for v in self.program.finite_variables
+        ]
+        result = rest_without_vars
+        for var_powers, rest in terms_with_vars:
+            term = rest
+            for i in range(len(var_powers)):
+                term *= finite_types[i].reduce_power(var_powers[i])
+            result += term.expand()
+        return result
+
+    def get_initial_value(self, monom: Expr):
+        """
+        Computes the initial expected value of a given monomial, by bottom up substitution of the initial
+        assignments block.
+        """
+        self.context = RecBuilderContext()
+        result = monom
+        for assign in reversed(self.program.initial):
+            if self._assign_replace_is_necessary(assign, result):
+                result = self._replace_assign(result, assign)
+                result = result.expand()
+
+        for sym in monom.free_symbols.difference(self.program.symbols):
+            result = result.xreplace({sym: Symbol(f"{sym}0")})
+
+        return result.expand()
+
+    def get_initial_value_poly(self, poly: Expr, variables: List[Symbol]):
+        """
+        Constructs a single initial value for the moment recurrence of a given polynomial.
+        """
+        monoms = get_terms_with_vars(poly, variables)
+        monoms, constant = monoms[0], monoms[1]
+        index_to_vars = {i: var for i, var in enumerate(variables)}
+        value = constant
+        for monom, coeff in monoms:
+            term = One()
+            for i in range(len(monom)):
+                term *= index_to_vars[i] ** monom[i]
+            value += coeff * self.get_initial_value(term)
+        return value.expand()
+
+    def get_initial_values(self, monomials: Set[Expr]):
+        """
+        Computes the initial expected values of a given set of monomials.
+        """
+        result = {}
+        for monom in monomials:
+            result[monom] = self.get_initial_value(monom)
+        return result
+
+    def get_solution(self, monom: Expr, solvers):
+        # just lookup the solution
+        solver = solvers[monom]
+        return solver.get(monom), solver.is_exact

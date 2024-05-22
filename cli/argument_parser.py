@@ -306,6 +306,13 @@ class ArgumentParser:
             default=False,
             help="""If set, Polar tries to compute a logical formula in SMT-lib syntax, which's validity/satisfyability
                     implies (non-)termination.""",
+        ),
+        self.argument_parser.add_argument(
+            "--termination_amber",
+            action="store_true",
+            default=False,
+            help="""If set, Polar tries to compute a logical formula in SMT-lib syntax, which's validity/satisfyability
+                    implies (non-)termination.""",
         )
 
     def parse_args(self):

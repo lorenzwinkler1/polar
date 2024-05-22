@@ -1,11 +1,13 @@
-from typing import Optional, Tuple
-from sympy import Poly, sympify
+from typing import Dict, List, Optional, Tuple
+from sympy import Expr, Poly, Symbol, sympify
 from termcolor import colored
 from program.condition.atom_cond import Atom
 from program.condition.condition import Condition
 from program.program import Program
 from recurrences.rec_builder import RecBuilder
+from recurrences.recurrences import Recurrences
 from recurrences.solver.recurrence_solver import RecurrenceSolver
+from termination.martingales.branches.branch_builder import BranchBuilder
 from termination.polynomial.polynomial_termination_condition import PolynomialTerminationCondition
 from termination.polynomial.termination_witness import TerminationWitness
 from termination.smt.smt_formula import SMTFormula
@@ -15,7 +17,7 @@ from utils.expressions import get_monoms, unpack_piecewise
 
 class TerminationAnalyzer:
     @classmethod
-    def analyze(cls, normalized_program: Program, loop_guard: Condition, smt=False):
+    def analyze(cls, normalized_program: Program, loop_guard: Condition, smt=False, amber=False):
         print()
         print(colored("-------------------", "cyan"))
         print(colored("-   Termination   -", "cyan"))
@@ -30,7 +32,11 @@ class TerminationAnalyzer:
         
         closed_form_poly = cls._compute_closed_form_of_polynomial(poly, normalized_program)
 
-        if smt:
+        if amber:
+            # apply amber methodology
+            branches = cls._compute_branches_for_polynomial(poly, normalized_program)
+            print(branches)
+        elif smt:
             has_prolog = normalized_program.initial is not None and len(normalized_program.initial) > 0
             formula = SMTTerminationCondition(closed_form_poly, 
                                               terminates_zero, 
@@ -51,6 +57,19 @@ class TerminationAnalyzer:
                 print(colored("Program does not terminate. Witness found:", "green"))
             print(witness)
 
+
+    @classmethod
+    def _compute_branches_for_polynomial(cls, poly: Poly, program: Program):
+        branch_builder = BranchBuilder(program)
+        expanded_poly = poly.expand()
+        symbols = expanded_poly.free_symbols
+        branches:Dict[Symbol, List[Tuple[Expr, Expr]]] = {}
+
+        for symbol in symbols:
+            symbol = sympify(str(symbol))
+            branches.update(branch_builder.get_branches(symbol))
+        
+        return branches
 
     @classmethod
     def _compute_closed_form_of_polynomial(cls, poly: Poly, program: Program):

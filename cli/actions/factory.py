@@ -43,4 +43,6 @@ class ActionFactory:
             return TerminationAction(cli_args)
         if cli_args.termination_smt:
             return TerminationAction(cli_args, smt=True)
+        if cli_args.termination_amber:
+            return TerminationAction(cli_args, amber=True)
         return PrintBenchmarkAction(cli_args)
