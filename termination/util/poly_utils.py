@@ -1,4 +1,5 @@
-from sympy import Poly, Symbol, degree, solve
+from typing import List
+from sympy import Expr, Poly, Symbol, degree, solve
 
 def has_real_zero(poly: Poly, symbol: Symbol):
     if degree(poly, gen=symbol) > 4: 
@@ -44,3 +45,16 @@ def get_sign(poly: Poly):
     if zero_value < 0:
         return False
     return True
+
+def get_possible_signs(expr: Expr):
+    "returns a tuple (a,b), where a==True, (b==True) iff poly can be positive (negative)"
+    raise NotImplementedError()
+
+def get_possible_signs(*args: List[Expr]):
+    maybe_pos = False
+    maybe_neg = False
+    for expr in args:
+        p, n = get_possible_signs(expr)
+        maybe_pos = p or maybe_pos
+        maybe_neg = n or maybe_neg
+    return maybe_pos, maybe_neg
