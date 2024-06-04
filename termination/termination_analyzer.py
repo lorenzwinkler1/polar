@@ -1,12 +1,14 @@
 from typing import Dict, List, Optional, Tuple
 from sympy import Expr, Poly, Symbol, sympify
 from termcolor import colored
+from program.assignment.dist_assignment import DistAssignment
 from program.condition.atom_cond import Atom
 from program.condition.condition import Condition
 from program.program import Program
 from recurrences.rec_builder import RecBuilder
 from recurrences.recurrences import Recurrences
 from recurrences.solver.recurrence_solver import RecurrenceSolver
+from termination.martingales.bounds.compute_bounds import compute_bounds_of_expr
 from termination.martingales.branches.branch_builder import BranchBuilder
 from termination.polynomial.polynomial_termination_condition import PolynomialTerminationCondition
 from termination.polynomial.termination_witness import TerminationWitness
@@ -30,11 +32,12 @@ class TerminationAnalyzer:
         
         poly, terminates_zero, terminates_negative = cls._normalize_atom(loop_guard)
         
-        closed_form_poly = cls._compute_closed_form_of_polynomial(poly, normalized_program)
+        closed_form_poly = poly.expand().subs(cls._compute_closed_form_of_polynomial(poly.free_symbols, normalized_program))
 
         if amber:
             # apply amber methodology
             branches = cls._compute_branches_for_polynomial(poly, normalized_program)
+            
             print(branches)
         elif smt:
             has_prolog = normalized_program.initial is not None and len(normalized_program.initial) > 0
@@ -57,6 +60,22 @@ class TerminationAnalyzer:
                 print(colored("Program does not terminate. Witness found:", "green"))
             print(witness)
 
+    @classmethod
+    def _compute_bounds_form_polynomial(cls, poly: Poly, 
+                                        branches: Dict[Symbol, List[Tuple[Expr, Expr]]],
+                                        program: Program):
+        dist_assignments = {}
+
+        for assignment in program.loop_body:
+            if isinstance(assignment, DistAssignment):
+                assert assignment.variable not in dist_assignments, "Program not in single-assignment form"
+                dist_assignments[assignment.variable] = assignment
+        
+        rec_builder = RecBuilder(program)
+        initial_values = rec_builder.get_initial_values(program.variables)
+        deterministic_closed_forms = cls._compute_closed_form_of_polynomial(program.variabl)
+
+        bounds = compute_bounds_of_expr(poly, branches, dist_assignments)
 
     @classmethod
     def _compute_branches_for_polynomial(cls, poly: Poly, program: Program):
@@ -72,10 +91,8 @@ class TerminationAnalyzer:
         return branches
 
     @classmethod
-    def _compute_closed_form_of_polynomial(cls, poly: Poly, program: Program):
+    def _compute_closed_form_of_polynomial(cls, symbols: List[Symbol], program: Program):
         recurrence_builder = RecBuilder(program)
-        expanded_poly = poly.expand()
-        symbols = expanded_poly.free_symbols
         solvers = {}
         closed_forms = {}
 
@@ -90,7 +107,7 @@ class TerminationAnalyzer:
                 print("Only exact closed forms are supported")
 
         closed_forms = {k: unpack_piecewise(closed_forms[k]) for k in closed_forms}
-        return expanded_poly.subs(closed_forms)
+        return closed_forms
 
     @classmethod
     def _normalize_atom(cls, atom: Atom) -> Tuple[Poly, bool, bool]:
