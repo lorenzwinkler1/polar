@@ -1,8 +1,8 @@
-from symengine.lib.symengine_wrapper import Expr, Zero, One
+from sympy import Expr
 from .distribution import Distribution
 from .exceptions import EvaluationException
 from scipy.stats import bernoulli
-from sympy import I, E, sympify
+from sympy import I, E, sympify, S
 
 
 class Bernoulli(Distribution):
@@ -47,7 +47,7 @@ class Bernoulli(Distribution):
         return self.p.free_symbols
 
     def get_support(self):
-        return {Zero(), One()}
+        return {S.Zero, S.One}
 
     def __str__(self):
         return f"Bernoulli({self.p})"

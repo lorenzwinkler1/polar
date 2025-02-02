@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Union, Tuple, Set, Dict
-from symengine.lib.symengine_wrapper import Expr, Symbol, sympify
+from sympy import Expr, Symbol, sympify
 from utils import float_to_rational
 
 

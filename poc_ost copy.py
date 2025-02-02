@@ -1,6 +1,6 @@
 from functools import reduce
 from typing import Dict
-from symengine.lib.symengine_wrapper import sympify
+from sympy import sympify
 from sympy import Piecewise, solve, symbols
 from inputparser.parser import Parser
 from invariants.invariant_ideal import InvariantIdeal

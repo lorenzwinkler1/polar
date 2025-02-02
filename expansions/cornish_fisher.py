@@ -1,12 +1,11 @@
 from functools import lru_cache
 from typing import Dict
-from symengine.lib.symengine_wrapper import (
+from sympy import (
     Expr,
     Rational,
     Symbol,
-    Zero,
     sqrt,
-    sympy2symengine,
+    S
 )
 from math import factorial
 import sympy as sym
@@ -43,7 +42,7 @@ class CornishFisherExpansion:
     def xi_h(self, k):
         result = self.a(k) * (self.h ** (k + 1))
 
-        s = Zero()
+        s = S.Zero
         for j in range(1, k):
             factor_2 = self.xi_h(k - j) - self.xi(k - j)
             factor_3 = self.xi(j) - self.a(j) * (self.h ** (j + 1))
@@ -54,6 +53,6 @@ class CornishFisherExpansion:
 
     @lru_cache(maxsize=None)
     def a(self, k):
-        return sympy2symengine(self.cumulants[k + 2]) / (
-            factorial(k + 2) * sqrt(sympy2symengine(self.cumulants[2])) ** (k + 2)
+        return (self.cumulants[k + 2]) / (
+            factorial(k + 2) * sqrt((self.cumulants[2])) ** (k + 2)
         )

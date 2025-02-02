@@ -1,6 +1,6 @@
 from typing import Dict
 
-from symengine.lib.symengine_wrapper import sympify, Zero, Symbol
+from sympy import sympify, Symbol, S
 
 from .or_cond import Or
 from .false_cond import FalseCond
@@ -46,14 +46,14 @@ class Atom(Condition):
 
         if self in store:
             self.poly1 = store[self].copy()
-            self.poly2 = Zero()
+            self.poly2 = S.Zero
             return []
 
         new_var = sympify(get_unique_var(name="r"))
         store[self.copy()] = new_var
         alias = self.poly1 - self.poly2
         self.poly1 = new_var
-        self.poly2 = Zero()
+        self.poly2 = S.Zero
         return [(new_var, alias)]
 
     def is_normalized(self):
