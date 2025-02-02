@@ -75,9 +75,9 @@ class Atom(Condition):
         if len(valid_values) == 0:
             result = FalseCond()
         elif len(valid_values) == 1:
-            result = Atom(self.poly1.copy(), "==", valid_values.pop())
+            result = Atom(self.poly1, "==", valid_values.pop())
         else:
-            result = Atom(self.poly1.copy(), "==", valid_values.pop())
+            result = Atom(self.poly1, "==", valid_values.pop())
             for v in valid_values:
                 result = Or(result, Atom(self.poly1.copy(), "==", v))
         result.is_loop_guard = self.is_loop_guard
@@ -133,4 +133,4 @@ class Atom(Condition):
         return hash((self.poly1, self.cop, self.poly2))
 
     def _simple_copy(self):
-        return Atom(self.poly1.copy(), self.cop, self.poly2.copy())
+        return Atom(self.poly1, self.cop, self.poly2)

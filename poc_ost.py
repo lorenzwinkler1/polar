@@ -10,7 +10,7 @@ from program.condition.true_cond import TrueCond
 from program.transformer import normalize_program
 from recurrences.rec_builder import RecBuilder
 
-test = Symbol("test", real=True)
+test = Symbol("test")
 test1 = sympify("a<2")
 
 program = Parser().parse_file("documentation/test/example_paper_2019.prob")
@@ -52,7 +52,7 @@ goal_monom = Expexted(sympify('k**2'))
 
 try_get_new_bound(final_expression1, goal_monom, bounds+[loop_guard.negated])
 
-try_get_new_bound(final_expression1.subs(sympify('k', sympify('(k-1)')).expand().simplify()), goal_monom, bounds+[loop_guard])
+try_get_new_bound(final_expression1.subs(sympify('k'), sympify('(k-1)').expand().simplify()), goal_monom, bounds+[loop_guard])
 
 print(final_expression1.expand().simplify())
 print(final_expression1.subs(sympify('k'), sympify('(k-1)')).expand().simplify())
